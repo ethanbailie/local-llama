@@ -7,5 +7,5 @@ def run_llama(system, human):
     <|start_header_id|>user<|end_header_id|>
     {human}<|eot_id|>
     '''
-    command = ['ollama', 'run', 'llama3.2', prompt]
+    command = ['ollama', 'run', 'llama3.1:8b', prompt]
     return subprocess.run(command, capture_output=True, text=True).stdout
