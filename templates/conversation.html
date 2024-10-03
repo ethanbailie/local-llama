@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+    <title>Conversation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f7;
+            margin: 0;
+            padding: 20px;
+        }
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            height: 80vh;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .message.left {
+            justify-content: flex-start;
+        }
+        .message.right {
+            justify-content: flex-end;
+        }
+        .bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .message.left .bubble {
+            background-color: #d0e6ff;
+            color: #000;
+            border-bottom-left-radius: 0;
+        }
+        .message.right .bubble {
+            background-color: #f1f0f0;
+            color: #000;
+            border-bottom-right-radius: 0;
+        }
+        .message .bubble::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+        .message.left .bubble::after {
+            left: -10px;
+            bottom: 0;
+            border: 10px solid transparent;
+            border-top-color: #d0e6ff;
+            border-bottom: 0;
+            border-left: 0;
+            margin-left: -10px;
+        }
+        .message.right .bubble::after {
+            right: -10px;
+            bottom: 0;
+            border: 10px solid transparent;
+            border-top-color: #f1f0f0;
+            border-bottom: 0;
+            border-right: 0;
+            margin-right: -10px;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+        .message.left .avatar {
+            order: 1;
+        }
+        .message.right .avatar {
+            order: 2;
+        }
+        .message .bubble {
+            order: 2;
+        }
+        .message.right .bubble {
+            order: 1;
+        }
+        /* Typing Indicator */
+        .typing {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .typing .bubble {
+            background-color: #e0e0e0;
+            color: #000;
+            font-style: italic;
+        }
+        .typing-indicator {
+            width: 30px;
+            height: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-left: 10px;
+        }
+        .typing-indicator div {
+            width: 6px;
+            height: 6px;
+            background-color: #999;
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+        .typing-indicator div:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator div:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chat-container">
+        <!-- Messages will be appended here -->
+        <div id="messages"></div>
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="message typing" style="display: none;">
+            <div class="avatar">
+                <img src="" alt="Typing..." width="40" height="40">
+            </div>
+            <div class="bubble">
+                <div class="typing-indicator">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Conversation data passed from Flask
+        const conversation = {{ conversation | tojson | safe }};
+        const messagesContainer = document.getElementById('messages');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const chatContainer = document.getElementById('chat-container');
+        let index = 0;
+
+        function showNextMessage() {
+            if (index < conversation.length) {
+                const message = conversation[index];
+                // Show typing indicator
+                typingIndicator.style.display = 'flex';
+                typingIndicator.className = 'message typing ' + (message.speaker === 'maya' ? 'left' : 'right');
+                typingIndicator.querySelector('.avatar img').src = "{{ url_for('static', filename='') }}" + message.avatar;
+                // Scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                // Delay before showing the message
+                const typingDuration = Math.max(500, message.message.length * 15); // Adjust typing duration based on message length
+                setTimeout(() => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    // Create message element
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message ' + (message.speaker === 'maya' ? 'left' : 'right');
+                    messageElement.innerHTML = `
+                        <div class="avatar">
+                            <img src="{{ url_for('static', filename='') }}${message.avatar}" alt="${message.speaker}" width="40" height="40">
+                        </div>
+                        <div class="bubble">
+                            ${message.message}
+                            <div class="timestamp">${message.timestamp}</div>
+                        </div>
+                    `;
+                    messagesContainer.appendChild(messageElement);
+                    // Scroll to the latest message
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    index++;
+                    // Wait before showing the next message
+                    setTimeout(showNextMessage, 500); // Adjust delay between messages here
+                }, typingDuration); // Adjust typing duration here
+            }
+        }
+
+        // Start the message display sequence
+        showNextMessage();
+    </script>
+</body>
+</html>

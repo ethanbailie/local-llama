@@ -1,5 +1,5 @@
 
 /conda
 alias
-__pycache__/local_llama.cpython-312.pyc
 .env
+*.pyc
